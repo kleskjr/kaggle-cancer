@@ -5,6 +5,7 @@ import re
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestClassifier
+import itertools
 
 
 def standardize_word(word):
@@ -94,7 +95,7 @@ def get_cleaned_text(fname):
                 line_letters = re.sub("[^a-zA-Z -]", "", line_text) 
                 line_letters_low = line_letters.lower()
                 line_letters_low = stop_pattern.sub('', line_letters_low)
-                line_words = line_letters_low.split()
+                #line_words = line_letters_low.split()
                 #all_words.append(line_words)
                 all_words.append(line_letters_low)
                 print(len(all_words), len(line_letters_low))
@@ -111,8 +112,7 @@ if __name__ == "__main__":
     train_text = get_cleaned_text(fname)
 
     #training_words = get_text_vectors(fname)
-    import itertools
-    flat_words = itertools.chain(*train_text)
+    #flat_words = itertools.chain(*train_text)
 
 
     # Initialize the "CountVectorizer" object, which is scikit-learn's
@@ -121,14 +121,13 @@ if __name__ == "__main__":
                              tokenizer = None,    \
                              preprocessor = None, \
                              stop_words = None,   \
-                             max_features = 5000) 
+                             max_features = 50000) 
 
     train_data_features = vectorizer.fit_transform(train_text)
     train_data_features = train_data_features.toarray()
 
-    forest = RandomForestClassifier(n_estimators = 100) 
+    forest = RandomForestClassifier(n_estimators=1000) 
     forest = forest.fit(train_data_features, training_variants["Class"])
-
 
     result_tr = forest.predict(train_data_features)
     print(np.corrcoef(result_tr, np.array(training_variants["Class"])))
@@ -155,7 +154,7 @@ if __name__ == "__main__":
         "class8":result_mat[:,7],
         "class9":result_mat[:,8]
         } )
-    output.to_csv( "test.csv", index=False, quoting=3 )
+    output.to_csv( "test.csv", index=False)
 
 
 
