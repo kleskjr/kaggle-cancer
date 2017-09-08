@@ -7,6 +7,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestClassifier
 import itertools
 
+from gensim.models import Word2Vec, KeyedVectors 
+#from gensim.models.KeyedVectors import load_word2vec_format
 
 def standardize_word(word):
     """Standardize word.
@@ -101,32 +103,63 @@ def get_cleaned_text(fname):
                 print(len(all_words), len(line_letters_low))
     return all_words
 
+def get_cleaned_text2(fname):
+    all_words = []
+    with open(fname, 'r') as f:
+        for n, line in enumerate(f):
+            if n and n<100:
+                line_id, line_text = line.split('||')
+                line_letters = re.sub("[^a-zA-Z -]", "", line_text) 
+                line_letters_low = line_letters.lower()
+                line_letters_low = stop_pattern.sub('', line_letters_low)
+                line_words = line_letters_low.split()
+                all_words.append(line_words)
+                #all_words.append(line_letters_low)
+                print(len(all_words), len(line_letters_low))
+    return all_words
 
 if __name__ == "__main__":
+
+    stop_words = ['et', 'al', 'fig', 'figs', 'figure', 'table', 'also',
+            'using', 'found', 'observed', 'however', 'previous', 'study',
+            'although', 'studies', 'several', 'showed', 'could', 
+            'performed', 'known', 'methods', 'whether', 'materials',
+            'known', 'analyzed', 'within', 'show', 'respectively', 
+            'thus', 'therefore', 'tested', 'among', 'abstract', 
+            'introduction']
 
     training_variants = pd.read_csv('../data/training_variants')
 
     stop_pattern = re.compile(r'\b(' + r'|'.\
             join(stopwords.words('english')) + r')\b\s*')
     fname = '../data/training_text'
-    train_text = get_cleaned_text(fname)
 
     #training_words = get_text_vectors(fname)
     #flat_words = itertools.chain(*train_text)
 
+    train_text2 = get_cleaned_text2(fname)
 
+    flatw = [w for a in train_text2 for w in a]
+    x = pd.DataFrame(flatw)
+
+    fname_w2v = '~/toys/mienv3/datasets/PubMed-w2v.bin'
+    #wv2 = KeyedVectors.load_word2vec_format(fname_w2v, binary=True)
+
+
+    '''
+    train_text = get_cleaned_text(fname)
     # Initialize the "CountVectorizer" object, which is scikit-learn's
     # bag of words tool.  
     vectorizer = CountVectorizer(analyzer = "word",   \
                              tokenizer = None,    \
                              preprocessor = None, \
                              stop_words = None,   \
-                             max_features = 50000) 
+                             max_features = 5000) 
 
     train_data_features = vectorizer.fit_transform(train_text)
     train_data_features = train_data_features.toarray()
 
-    forest = RandomForestClassifier(n_estimators=1000) 
+    forest = RandomForestClassifier(n_estimators=200) 
     forest = forest.fit(train_data_features, training_variants["Class"])
 
     result_tr = forest.predict(train_data_features)
@@ -155,6 +188,7 @@ if __name__ == "__main__":
         "class9":result_mat[:,8]
         } )
     output.to_csv( "test.csv", index=False)
+    '''
 
 
 
