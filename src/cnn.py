@@ -83,10 +83,26 @@ def create_model(fvec, train_variants, epochs=2):
 def create_model_min(fvec, train_variants, epochs=2):
     
     wvec_size = fvec.shape[2]
-    text_len = None#fvec.shape[1]#None
+    text_len = fvec.shape[1]#None
     main_input = Input(shape=(text_len, wvec_size))
-    x = Conv1D(10, 10, padding='valid', input_shape=(text_len, wvec_size), 
+
+    x10 = Conv1D(10, 10, padding='same', input_shape=(text_len, wvec_size), 
             kernel_initializer='ones')(main_input)
+    x10 = Activation('relu')(x10)
+    x10 = Dropout(0.2)(x10)
+
+    x5 = Conv1D(20, 5, padding='same', input_shape=(text_len, wvec_size), 
+            kernel_initializer='ones')(main_input)
+    x5 = Activation('relu')(x5)
+    x5 = Dropout(0.2)(x5)
+
+    x3 = Conv1D(30, 3, padding='same', input_shape=(text_len, wvec_size), 
+            kernel_initializer='ones')(main_input)
+    x3 = Activation('relu')(x3)
+    x3 = Dropout(0.2)(x3)
+
+    x = Concatenate()([x10, x5, x3])
+
 
     '''
     #x = MaxPooling1D(pool_size=100, strides=None, padding='valid')(x)
@@ -98,11 +114,29 @@ def create_model_min(fvec, train_variants, epochs=2):
     z = Bidirectional(LSTM(50, return_sequences=True), merge_mode='concat',
             weights=None)(x)
 
-    x = Conv1D(20, 5, padding='same')(x)
-    x = Activation('relu')(x)
-    x = GlobalMaxPooling1D()(x)
+    x10 = Conv1D(10, 10, padding='same')(z)
+    x10 = Activation('relu')(x10)
+    x10 = Dropout(0.2)(x10)
 
-    #1/0
+    x5 = Conv1D(20, 5, padding='same')(z)
+    x5 = Activation('relu')(x5)
+    x5 = Dropout(0.2)(x5)
+
+    x = Concatenate()([x10, x5])
+
+    x = GlobalMaxPooling1D()(x)
+    #x = MaxPooling1D(pool_size=100, strides=50, padding='valid')(x)
+    #x = Flatten()(x)
+
+    #x = Dense(80)(x)
+    #output = Activation('tanh')(x)
+
+    x = Dense(30)(x)
+    output = Activation('tanh')(x)
+
+    x = Dense(10)(x)
+    output = Activation('tanh')(x)
+
     x = Dense(n_classes)(x)
     output = Activation('softmax')(x)
 
@@ -112,7 +146,7 @@ def create_model_min(fvec, train_variants, epochs=2):
 
     y_binary = to_categorical(np.array(
                     train_variants["Class"].values)-1, n_classes)
-    nn_model.fit(fvec, y_binary, epochs=epochs, validation_split=0.1)
+    nn_model.fit(fvec, y_binary, epochs=epochs, validation_split=0.2)
  
     return nn_model
 
@@ -134,18 +168,41 @@ def create_model_kur(fvec, a, epochs):
     return nn_model
 
 
+def predict_cnn(nn_model, fvec_test=None):
+    
+    #test_variants = pd.read_csv('../data/test_variants')
+    if fvec_test==None:
+        fvec_test = get_feature_vector2('../data/test_text', train_variants)
+
+    result_mat = nn_model.predict(fvec_test)
+    test_id = np.arange(len(result_mat))
+
+    #result_mat = result_mat.astype(int)
+    output = pd.DataFrame( data={"ID":test_id, "class1":result_mat[:,0],
+            "class2":result_mat[:,1],
+            "class3":result_mat[:,2],
+            "class4":result_mat[:,3],
+            "class5":result_mat[:,4],
+            "class6":result_mat[:,5],
+            "class7":result_mat[:,6],
+            "class8":result_mat[:,7],
+            "class9":result_mat[:,8]
+            } )
+    output.to_csv( "compute2_test.csv", index=False)
+
+
 def test(fvec):
 
     #nn_model = create_model_n(fvec, epochs=100)
     #predict_cnn(nn_model, fvec[:10,:,:])
 
     n_texts = 10
-    train_variants = pd.read_csv('../data/training_variants')[:n_texts]
+    train_variants = pd.read_csv('../data/training_variants')[:]
     #test_variants = pd.read_csv('../data/test_variants')
 
-    nn_model = create_model_min(fvec[:n_texts,:2000,:2], 
-                                train_variants, epochs=100)
-    predict_cnn(nn_model, fvec[:n_texts,:2000,:2])
+    nn_model = create_model_min(fvec[:,:,:], 
+                                train_variants, epochs=10)
+    predict_cnn(nn_model, fvec[:,:,:])
 
     return nn_model
 
