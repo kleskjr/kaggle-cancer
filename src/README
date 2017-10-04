@@ -1,0 +1,8 @@
+Some code exploring the Kaggle challenge "Personal Medicine: Redefining Cancer treatment"
+
+link...
+
+The task was to classify how different gene mutations lead to different classes of cancer based on medical articles. Here I explored the data in the notebooks, and trying a CNN with a LSTM in test_cnn.py.
+
+
+
